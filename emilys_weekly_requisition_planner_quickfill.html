@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EMILY'S — ระบบวางแผนการเบิกวัตถุดิบรายสัปดาห์</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Barlow:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #fdf7f0;
+  --surface: #ffffff;
+  --surface2: #fef5e9;
+  --surface3: #fffaf5;
+  --border: #e5d0b8;
+  --border2: #c9aa88;
+  --accent: #c05e28;
+  --accent2: #a04820;
+  --accent-light: #fde8d8;
+  --accent-pale: #fff3eb;
+  --text: #2c1d0f;
+  --text2: #7a5535;
+  --text3: #b08860;
+  --green: #276b42;
+  --green-bg: #e8f5ee;
+  --warn: #b85c10;
+  --warn-bg: #fdeedd;
+  --safety: #6e4fa0;
+  --safety-bg: #f3eefb;
+  --petite-bg: #f3eefb;
+  --petite-border: #c9b4e8;
+  --auto-bg: #eef6fb;
+  --auto-border: #a8d0e8;
+  --auto-color: #1a6a9a;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --mono: 'IBM Plex Mono', monospace;
+  --shadow-sm: 0 1px 3px rgba(120,70,20,0.10);
+  --shadow: 0 2px 8px rgba(120,70,20,0.10);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: 'Sarabun', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+ 
+.header {
+  background: var(--surface);
+  border-bottom: 1.5px solid var(--border);
+  padding: 0 28px;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 62px;
+  position: sticky; top: 0; z-index: 200;
+  box-shadow: var(--shadow-sm);
+}
+.logo { display: flex; align-items: center; gap: 14px; }
+.logo-wordmark { font-family: 'Barlow', sans-serif; font-weight: 900; font-size: 22px; letter-spacing: 0.08em; color: #111; line-height: 1; }
+.logo-divider { width: 1px; height: 28px; background: var(--border2); margin: 0 4px; }
+.logo-sub { font-size: 11px; color: var(--text3); line-height: 1.4; }
+.logo-sub strong { display: block; font-size: 12px; color: var(--text2); font-weight: 600; }
+.header-actions { display: flex; align-items: center; gap: 10px; }
+.btn { font-family: 'Sarabun', sans-serif; font-size: 13px; font-weight: 600; padding: 7px 18px; border-radius: var(--radius-sm); cursor: pointer; border: none; transition: all .15s; }
+.btn-ghost { background: var(--surface2); border: 1.5px solid var(--border); color: var(--text2); }
+.btn-ghost:hover { border-color: var(--border2); color: var(--text); }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent2); }
+ 
+.layout { display: grid; grid-template-columns: 320px 1fr; min-height: calc(100vh - 62px); }
+ 
+.sidebar {
+  background: var(--surface);
+  border-right: 1.5px solid var(--border);
+  padding: 20px 16px 40px;
+  overflow-y: auto;
+  position: sticky; top: 62px;
+  height: calc(100vh - 62px);
+}
+.sidebar-block { margin-bottom: 22px; }
+.sidebar-block-title {
+  font-size: 10px; font-weight: 700; color: var(--text3);
+  letter-spacing: 0.09em; text-transform: uppercase;
+  margin-bottom: 10px; padding-left: 2px;
+  display: flex; align-items: center; gap: 6px;
+}
+.sidebar-block-title::after { content:''; flex:1; height:1px; background:var(--border); margin-left:6px; }
+ 
+.schedule-card { background: var(--accent-pale); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 8px; }
+.schedule-label { font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 8px; }
+.schedule-select {
+  width: 100%; background: #fff; border: 1.5px solid var(--border2); border-radius: var(--radius-sm);
+  color: var(--text); font-family: 'Sarabun', sans-serif; font-size: 13px; font-weight: 500;
+  padding: 7px 10px; outline: none; cursor: pointer;
+}
+.delivery-days { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 5px; }
+.day-chip { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 99px; background: var(--surface2); color: var(--text3); border: 1.5px solid var(--border); }
+.day-chip.active { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+ 
+.config-row {
+  background: var(--surface3); border: 1.5px solid var(--border); border-radius: var(--radius);
+  padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px;
+}
+.config-row label { font-size: 12px; color: var(--text2); font-weight: 500; flex: 1; }
+.config-select {
+  background: #fff; border: 1.5px solid var(--border2); border-radius: var(--radius-sm);
+  color: var(--text); font-family: 'Sarabun', sans-serif; font-size: 12px; font-weight: 500;
+  padding: 5px 8px; outline: none; cursor: pointer;
+}
+ 
+.main { padding: 0; background: var(--bg); }
+.planner-header {
+  background: var(--surface); border-bottom: 1.5px solid var(--border);
+  padding: 16px 24px; display: flex; align-items: center; justify-content: space-between;
+  box-shadow: var(--shadow-sm);
+}
+.planner-title { font-size: 14px; font-weight: 700; color: var(--text); }
+.planner-hint { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.week-nav { display: flex; align-items: center; gap: 10px; }
+.week-label { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--text); min-width: 200px; text-align: center; }
+.btn-week { background: var(--surface2); border: 1.5px solid var(--border); color: var(--text2); font-family: 'Sarabun', sans-serif; font-size: 14px; padding: 5px 12px; border-radius: var(--radius-sm); cursor: pointer; transition: all .15s; }
+.btn-week:hover { border-color: var(--border2); color: var(--text); }
+ 
+.weekly-grid {
+  display: grid; grid-template-columns: 130px repeat(7, 1fr);
+  border-bottom: 1.5px solid var(--border); background: var(--surface); overflow-x: auto;
+}
+.wg-header-corner {
+  background: var(--surface2); border-right: 1.5px solid var(--border); border-bottom: 1.5px solid var(--border);
+  padding: 10px 12px; font-size: 10px; font-weight: 700; color: var(--text3); text-transform: uppercase;
+  letter-spacing: 0.07em; display: flex; align-items: flex-end;
+}
+.wg-day-header { border-right: 1px solid var(--border); border-bottom: 1.5px solid var(--border); padding: 8px 10px; background: var(--surface2); text-align: center; }
+.wg-day-header.delivery-day { background: var(--accent-light); }
+.wg-day-name { font-size: 12px; font-weight: 700; color: var(--text); }
+.wg-day-date { font-size: 10px; color: var(--text3); margin-top: 1px; font-family: var(--mono); }
+.delivery-badge { display: inline-block; font-size: 9px; font-weight: 700; background: var(--accent); color: #fff; padding: 1px 6px; border-radius: 99px; margin-top: 3px; }
+.wg-menu-label { border-right: 1.5px solid var(--border); border-bottom: 1px solid var(--border); padding: 10px 12px; background: var(--surface3); font-size: 12px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 5px; }
+.wg-menu-label.petite { background: var(--petite-bg); }
+.wg-cell { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 6px 8px; background: var(--surface); position: relative; }
+.wg-cell.delivery-day { background: #fff9f5; }
+.wg-input { width: 100%; background: transparent; border: none; font-family: var(--mono); font-size: 14px; font-weight: 600; color: var(--accent); text-align: center; padding: 4px 2px; outline: none; border-bottom: 1.5px solid var(--border2); transition: border-color .15s; }
+.wg-input:focus { border-color: var(--accent); background: var(--accent-pale); border-radius: 4px 4px 0 0; }
+.wg-unit { font-size: 9px; color: var(--text3); text-align: center; margin-top: 1px; }
+ 
+.rounds-container { padding: 24px; }
+.round-block { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); margin-bottom: 24px; overflow: hidden; box-shadow: var(--shadow-sm); }
+.round-header { background: var(--accent); color: #fff; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; }
+.round-title { font-size: 15px; font-weight: 700; }
+.round-coverage { font-size: 12px; opacity: 0.85; margin-top: 2px; }
+.round-summary-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.round-chip { background: rgba(255,255,255,0.2); font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 99px; font-family: var(--mono); }
+ 
+/* AUTO STOCK NOTICE BANNER */
+.auto-stock-banner {
+  background: var(--auto-bg);
+  border-bottom: 1.5px solid var(--auto-border);
+  padding: 9px 16px;
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11px; color: var(--auto-color); font-weight: 500;
+}
+.auto-stock-banner strong { font-weight: 700; }
+ 
+table { width: 100%; border-collapse: collapse; }
+thead { background: var(--surface2); }
+th { text-align: left; padding: 9px 14px; font-size: 10px; font-weight: 700; color: var(--text3); letter-spacing: 0.07em; text-transform: uppercase; border-bottom: 1.5px solid var(--border); }
+td { padding: 11px 14px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--surface2); }
+ 
+.item-name { font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.item-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.val { font-family: var(--mono); font-size: 14px; font-weight: 600; }
+.unit-sm { font-size: 11px; color: var(--text3); margin-left: 2px; }
+.ok { color: var(--green); font-size: 12px; font-weight: 600; }
+.warn-val { color: var(--warn); }
+ 
+.req-cell { display: flex; flex-direction: column; gap: 2px; }
+.req-main { font-family: var(--mono); font-size: 16px; font-weight: 700; color: var(--accent); }
+.req-breakdown { font-size: 10px; color: var(--text3); }
+.req-safety { font-size: 10px; color: var(--safety); font-weight: 600; }
+ 
+.badge { display: inline-flex; align-items: center; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 99px; }
+.badge-ok { background: var(--green-bg); color: var(--green); }
+.badge-warn { background: var(--warn-bg); color: var(--warn); }
+ 
+/* STOCK CELL — manual vs auto */
+.stock-cell-wrap { display: flex; flex-direction: column; gap: 3px; }
+.stock-input {
+  width: 64px; background: var(--surface3); border: 1.5px solid var(--border2); border-radius: var(--radius-sm);
+  color: var(--text); font-family: var(--mono); font-size: 13px; font-weight: 600;
+  padding: 4px 7px; text-align: center; outline: none; transition: all .15s;
+}
+.stock-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); background: #fff; }
+.stock-unit { font-size: 11px; color: var(--text3); margin-left: 4px; }
+ 
+/* auto-calculated stock display */
+.stock-auto-val {
+  display: flex; align-items: center; gap: 5px;
+  background: var(--auto-bg); border: 1.5px solid var(--auto-border);
+  border-radius: var(--radius-sm); padding: 4px 9px;
+  font-family: var(--mono); font-size: 13px; font-weight: 700;
+  color: var(--auto-color); width: fit-content;
+}
+.stock-auto-label { font-size: 9px; color: var(--auto-color); opacity: 0.75; letter-spacing: 0.04em; margin-top: 2px; }
+.stock-auto-formula { font-size: 10px; color: var(--auto-color); opacity: 0.8; margin-top: 1px; white-space: nowrap; }
+ 
+
+.quickfill-panel {
+  background: var(--surface3);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-top: 12px;
+}
+.quickfill-grid {
+  display: grid;
+  grid-template-columns: 1fr 92px;
+  gap: 8px;
+  align-items: center;
+}
+.quickfill-panel label {
+  font-size: 11px;
+  color: var(--text2);
+  font-weight: 600;
+}
+.quickfill-select,
+.quickfill-input {
+  width: 100%;
+  background: #fff;
+  border: 1.5px solid var(--border2);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: 'Sarabun', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 8px;
+  outline: none;
+}
+.quickfill-input {
+  font-family: var(--mono);
+  text-align: center;
+}
+.quickfill-days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+}
+.quickfill-days label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text2);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 3px 8px;
+  cursor: pointer;
+}
+.quickfill-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+.quickfill-actions .btn {
+  flex: 1;
+  padding: 6px 8px;
+  font-size: 12px;
+}
+
+@media print {
+  .header { position: static !important; }
+  .btn, .sidebar { display: none !important; }
+  .layout { grid-template-columns: 1fr !important; }
+  .weekly-grid { display: none !important; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+@media (max-width: 960px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { position: static; height: auto; border-right: none; border-bottom: 1.5px solid var(--border); }
+}
+</style>
+</head>
+<body>
+ 
+<header class="header">
+  <div class="logo">
+    <div class="logo-wordmark">EMILY'S</div>
+    <div class="logo-divider"></div>
+    <div class="logo-sub">
+      <strong>ระบบวางแผนการเบิกวัตถุดิบ</strong>
+      Weekly Planning & Requisition
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-ghost" onclick="resetAll()">↺ รีเซ็ต</button>
+    <button class="btn btn-primary" onclick="window.print()">🖨 พิมพ์ใบเบิก</button>
+  </div>
+</header>
+ 
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-block">
+      <div class="sidebar-block-title">🚚 รอบการส่งของ</div>
+      <div class="schedule-card">
+        <div class="schedule-label">เลือกรูปแบบการส่งของสาขา</div>
+        <select class="schedule-select" id="delivery-schedule" onchange="onScheduleChange()">
+          <option value="daily">ทุกวัน (จ–อา)</option>
+          <option value="custom">กำหนดเอง</option>
+        </select>
+        <div class="delivery-days" id="day-chips"></div>
+      </div>
+      <div id="custom-days" style="display:none; margin-top:8px;">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:6px;">เลือกวันที่ส่งของ:</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" id="cd-0" onchange="onCustomDay()">จ</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" id="cd-1" onchange="onCustomDay()">อ</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" id="cd-2" onchange="onCustomDay()">พ</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" id="cd-3" onchange="onCustomDay()">พฤ</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" id="cd-4" onchange="onCustomDay()">ศ</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" id="cd-5" onchange="onCustomDay()">ส</label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" id="cd-6" onchange="onCustomDay()">อา</label>
+        </div>
+      </div>
+    </div>
+ 
+    <div class="sidebar-block">
+      <div class="sidebar-block-title">⚙️ ตั้งค่า</div>
+      <div class="config-row">
+        <label>✨ แพ็คกระเทียมเจียว</label>
+        <select class="config-select" id="garlic-pack-size" onchange="calc()">
+          <option value="1000">1 กก.</option>
+          <option value="3000">3 กก.</option>
+        </select>
+      </div>
+    </div>
+ 
+    <div class="sidebar-block">
+      <div class="sidebar-block-title">📋 คำอธิบาย Safety Stock</div>
+      <div style="background:var(--safety-bg);border:1.5px solid var(--petite-border);border-radius:var(--radius);padding:12px 14px;font-size:11px;color:var(--text2);line-height:1.8;">
+        <b style="color:var(--safety)">Safety Stock = 1 หน่วย + ⌈5%⌉ ของยอดใช้จริง</b><br>
+        แสดงในช่อง "ต้องเบิก" เป็น<br>
+        <span style="font-family:var(--mono);font-size:10px;">(ยอดจริง + safety stock)</span>
+      </div>
+    </div>
+ 
+    <div class="sidebar-block">
+      <div class="sidebar-block-title">🔄 สต็อคอัตโนมัติ</div>
+      <div style="background:var(--auto-bg);border:1.5px solid var(--auto-border);border-radius:var(--radius);padding:12px 14px;font-size:11px;color:var(--auto-color);line-height:1.8;">
+        <b>รอบที่ 2 เป็นต้นไป</b> ระบบจะคำนวณสต็อคเริ่มต้นให้อัตโนมัติ:<br>
+        <span style="font-family:var(--mono);font-size:10px;display:block;margin-top:4px;">(สต็อคต้นรอบก่อน + เบิกรอบก่อน) − ใช้ระหว่างรอบ</span>
+        <span style="font-size:10px;opacity:0.8;display:block;margin-top:4px;">กรอกสต็อคจริงได้เฉพาะรอบแรก</span>
+      </div>
+    </div>
+  </aside>
+ 
+  <div class="main">
+    <div class="planner-header">
+      <div>
+        <div class="planner-title">🗓 แผนการขายรายสัปดาห์</div>
+        <div class="planner-hint">กรอกเป้าหมายจำนวนกล่องแต่ละเมนูในแต่ละวัน — รอบท้ายสัปดาห์จะคำนึงถึงแผนสัปดาห์ถัดไปอัตโนมัติ</div>
+        <div class="quickfill-panel">
+          <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:0.07em;text-transform:uppercase;margin-bottom:8px;">⚡ กรอกยอดขายแบบเร็ว</div>
+          <div class="quickfill-grid">
+            <label>เมนู</label>
+            <label>ยอด/วัน</label>
+            <select class="quickfill-select" id="quickfill-menu">
+              <option value="all">ทุกเมนู</option>
+            </select>
+            <input class="quickfill-input" type="number" id="quickfill-value" min="0" step="1" placeholder="0">
+          </div>
+          <div style="display:flex;gap:6px;margin-top:8px;">
+            <button class="btn btn-ghost" style="flex:1;padding:5px 8px;font-size:11px;" onclick="quickFillPreset('weekday')">จ–ศ</button>
+            <button class="btn btn-ghost" style="flex:1;padding:5px 8px;font-size:11px;" onclick="quickFillPreset('weekend')">ส–อา</button>
+            <button class="btn btn-ghost" style="flex:1;padding:5px 8px;font-size:11px;" onclick="quickFillPreset('all')">ทั้งสัปดาห์</button>
+            <button class="btn btn-ghost" style="flex:1;padding:5px 8px;font-size:11px;" onclick="quickFillPreset('clear')">ล้างวันเลือก</button>
+          </div>
+          <div class="quickfill-days">
+            <label><input type="checkbox" class="qf-day" value="0">จ</label>
+            <label><input type="checkbox" class="qf-day" value="1">อ</label>
+            <label><input type="checkbox" class="qf-day" value="2">พ</label>
+            <label><input type="checkbox" class="qf-day" value="3">พฤ</label>
+            <label><input type="checkbox" class="qf-day" value="4">ศ</label>
+            <label><input type="checkbox" class="qf-day" value="5">ส</label>
+            <label><input type="checkbox" class="qf-day" value="6">อา</label>
+          </div>
+          <div class="quickfill-actions">
+            <button class="btn btn-primary" onclick="applyQuickFill()">ใส่ยอดให้วันที่เลือก</button>
+            <button class="btn btn-ghost" onclick="copyMondayToFriday()">คัดลอกยอดวันจันทร์ → ศุกร์</button>
+          </div>
+        </div>
+      </div>
+      <div class="week-nav">
+        <button class="btn-week" onclick="changeWeek(-1)">‹</button>
+        <div class="week-label" id="week-label"></div>
+        <button class="btn-week" onclick="changeWeek(1)">›</button>
+      </div>
+    </div>
+ 
+    <div style="overflow-x:auto; background:var(--surface); border-bottom:1.5px solid var(--border);">
+      <div class="weekly-grid" id="weekly-grid" style="min-width:860px;"></div>
+    </div>
+ 
+    <div class="rounds-container" id="rounds-container"></div>
+  </div>
+</div>
+ 
+<script>
+const BOILED_PER_OB    = 4.15 * 1500;
+const BATCHES_PER_OB   = BOILED_PER_OB / 4000;
+const BOXES_PER_OB     = BATCHES_PER_OB * 29;
+const RICE_BATCH_BOXES = 45;
+const PROTEIN_G_PER_BOX = 1000 / 4.5;
+ 
+const DAY_NAMES  = ['จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์','อาทิตย์'];
+const DAY_SHORT  = ['จ','อ','พ','พฤ','ศ','ส','อา'];
+const MONTH_EN   = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+ 
+const MENUS = [
+  { id:'noodle', label:'🍜 เส้นหมี่ไก่ฉีก', petite:false },
+  { id:'rc',     label:'🐔 ข้าวไก่ฉีก',      petite:false },
+  { id:'rw',     label:'🥩 ข้าววากิว',        petite:false },
+  { id:'rk',     label:'🐷 ข้าวคุโรบูตะ',    petite:false },
+  { id:'rwp',    label:'🥩 ข้าววากิว Petite',    petite:true },
+  { id:'rkp',    label:'🐷 ข้าวคุโรบูตะ Petite', petite:true },
+];
+ 
+const SCHEDULES = { 'daily': [0,1,2,3,4,5,6], 'custom': [] };
+ 
+let weekOffset = 0;
+let deliveryDays = [0,1,2,3,4,5,6];
+const plan = {};
+ 
+// stockR0[sKey] = user-entered stock for round 0 (first round of this week)
+const stockR0 = {};
+ 
+function getPlanKey() { return `w${weekOffset}`; }
+function getPlan(day, menuId, weekDelta = 0) {
+  // weekDelta = 0 means current selected week, 1 means next week.
+  // This lets the last delivery round of the week cover the first delivery day of next week.
+  return (plan[`w${weekOffset + weekDelta}`]?.[day]?.[menuId]) || 0;
+}
+function setPlan(day, menuId, val) {
+  const k = getPlanKey();
+  if (!plan[k]) plan[k] = {};
+  if (!plan[k][day]) plan[k][day] = {};
+  plan[k][day][menuId] = val;
+}
+ 
+function getWeekStart(offset) {
+  const now = new Date();
+  const day = now.getDay();
+  const mon = new Date(now);
+  mon.setDate(now.getDate() - (day === 0 ? 6 : day - 1) + offset * 7);
+  mon.setHours(0,0,0,0);
+  return mon;
+}
+function fmtDate(d) { return `${d.getDate()} ${MONTH_EN[d.getMonth()]}`; }
+function updateWeekLabel() {
+  const s = getWeekStart(weekOffset);
+  const e = new Date(s); e.setDate(s.getDate()+6);
+  document.getElementById('week-label').textContent = `${fmtDate(s)} – ${fmtDate(e)}`;
+}
+function changeWeek(delta) { weekOffset += delta; updateWeekLabel(); renderGrid(); calc(); }
+ 
+function onScheduleChange() {
+  const val = document.getElementById('delivery-schedule').value;
+  document.getElementById('custom-days').style.display = val === 'custom' ? 'block' : 'none';
+  if (val !== 'custom') deliveryDays = [...SCHEDULES[val]];
+  renderDayChips(); renderGrid(); calc();
+}
+function onCustomDay() {
+  deliveryDays = [];
+  for (let i=0;i<7;i++) { if (document.getElementById(`cd-${i}`)?.checked) deliveryDays.push(i); }
+  renderDayChips(); renderGrid(); calc();
+}
+function renderDayChips() {
+  document.getElementById('day-chips').innerHTML = DAY_SHORT.map((d,i) =>
+    `<span class="day-chip ${deliveryDays.includes(i)?'active':''}">${d}</span>`
+  ).join('');
+}
+ 
+function renderGrid() {
+  const ws = getWeekStart(weekOffset);
+  const grid = document.getElementById('weekly-grid');
+  const days = Array.from({length:7},(_,i)=>{ const d=new Date(ws); d.setDate(ws.getDate()+i); return d; });
+  let html = `<div class="wg-header-corner">เมนู</div>`;
+  days.forEach((d,i)=>{
+    const isDel = deliveryDays.includes(i);
+    html += `<div class="wg-day-header ${isDel?'delivery-day':''}">
+      <div class="wg-day-name">${DAY_NAMES[i]}</div>
+      <div class="wg-day-date">${fmtDate(d)}</div>
+      ${isDel ? '<div><span class="delivery-badge">📦 ส่งของ</span></div>' : ''}
+    </div>`;
+  });
+  MENUS.forEach(m => {
+    html += `<div class="wg-menu-label ${m.petite?'petite':''}">${m.label}</div>`;
+    for(let i=0;i<7;i++){
+      const val = getPlan(i, m.id);
+      html += `<div class="wg-cell ${deliveryDays.includes(i)?'delivery-day':''}">
+        <input class="wg-input" type="number" min="0" step="1" value="${val||''}" placeholder="0"
+          oninput="setPlan(${i},'${m.id}',parseInt(this.value)||0);calc()">
+        <div class="wg-unit">กล่อง</div>
+      </div>`;
+    }
+  });
+  html += `<div class="wg-menu-label" style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:0.04em;">รวม/วัน</div>`;
+  for(let i=0;i<7;i++){
+    const tot = MENUS.reduce((s,m)=>s+getPlan(i,m.id),0);
+    html += `<div class="wg-cell ${deliveryDays.includes(i)?'delivery-day':''}" style="background:var(--surface2);display:flex;align-items:center;justify-content:center;">
+      <span style="font-family:var(--mono);font-size:15px;font-weight:700;color:var(--text);">${tot||'—'}</span>
+    </div>`;
+  }
+  grid.innerHTML = html;
+}
+ 
+function getRounds() {
+  if (deliveryDays.length === 0) return [];
+  const sorted = [...deliveryDays].sort((a,b)=>a-b);
+
+  return sorted.map((delDay, ri) => {
+    const nextDelDay = sorted[(ri+1) % sorted.length];
+    const days = [];
+
+    // One delivery day per week:
+    // cover from this delivery day through the same delivery day next week.
+    if (sorted.length === 1) {
+      for (let step = 0; step <= 7; step++) {
+        const absDay = delDay + step;
+        days.push({
+          dayIdx: absDay % 7,
+          weekDelta: Math.floor(absDay / 7),
+          weight: (step === 0 || step === 7) ? 0.5 : 1
+        });
+      }
+    } else {
+      // Multiple delivery days per week:
+      // if the next delivery day wraps past Sunday, read that day from next week.
+      let cur = delDay;
+      const target = nextDelDay <= delDay ? nextDelDay + 7 : nextDelDay;
+
+      while (cur <= target) {
+        days.push({
+          dayIdx: cur % 7,
+          weekDelta: Math.floor(cur / 7),
+          weight: (cur === delDay || cur === target) ? 0.5 : 1
+        });
+        cur++;
+      }
+    }
+
+    return { delDay, days, ri };
+  });
+}
+ 
+function udisp(g, gpu) {
+  if (g === 0) return '0';
+  const u = g / gpu;
+  return u % 1 === 0 ? u.toString() : parseFloat(u.toFixed(3)).toString();
+}
+function safetyUnits(reqUnits) { return 1 + Math.ceil(reqUnits * 0.05); }
+ 
+// Build ingredient list for a round
+function buildIngredients(totalBoxes, N, RC, RW, RK, RWP, RKP, noodleBatches, obNeeded, riceBatches, garlicPackG) {
+  const R_std  = RC+RW+RK;          // เมนูข้าวปกติ
+  const R_pet  = RWP+RKP;           // เมนู Petite
+  const R_box  = R_std+R_pet;       // กล่องข้าวทั้งหมด
+  // สำหรับวัตถุดิบที่นับ Petite เต็มกล่อง (ผัก, กระเทียม, น้ำปรุง, พาร์สลี่)
+  const allBoxFull = N + R_box;
+  const rows = [];
+  const add = (name,icon,needG,sKey,sUnit,sGpu,note,section) =>
+    rows.push({name,icon,needG,sKey,sUnit,sGpu,note,section});
+ 
+  // ผักกาดหอม — นับ Petite เต็มกล่อง เหมือนกล่องปกติ
+  add('ผักกาดหอม','🥬',allBoxFull*25,'lettuce','ถุง',2000,'1 ถุง = 2 กก.','shared');
+  // กระเทียมเจียว — R_box นับ Petite เต็ม (ไม่ใช้ R_eq)
+  add('กระเทียมเจียว','✨',(N*1.5+R_box*3)+(noodleBatches*110),'garlic','แพ็ค',garlicPackG,`แพ็ค ${garlicPackG/1000} กก.`,'shared');
+  add('น้ำมันกระเทียมเจียว','🫙',noodleBatches*100+riceBatches*400,'oil','แกลลอน',5000,'1 แกลลอน = 5 กก.','shared');
+  const sauceN=noodleBatches*1100, sauceR=riceBatches*2000;
+  // น้ำปรุง — ใช้ allBoxFull สำหรับส่วนข้าว (Petite เต็ม)
+  add('น้ำปรุง','🍶',sauceN+sauceR,'sauce','ขวด',1100,`เส้น ${udisp(sauceN,1100)} + ข้าว ${udisp(sauceR,1100)} ขวด`,'shared');
+  // พาร์สลี่ — นับ Petite เต็มกล่อง
+  add('พาร์สลี่','🌿',allBoxFull*0.025,'parsley','ถุง',500,'1 ถุง = 500 ก.','shared');
+  // กล่อง 26oz — เฉพาะเมนูปกติ (N + R_std)
+  const std_box = N + R_std;
+  if(std_box>0) add('กล่องขาว 26oz','📦',std_box,'box26','ลัง',500,'1 ลัง = 500 กล่อง | เมนูปกติ','shared');
+  // กล่อง 16oz — เฉพาะ Petite
+  if(R_pet>0) add('กล่องขาว 16oz','🟦',R_pet,'box16','ลัง',500,'1 ลัง = 500 กล่อง | Petite เท่านั้น','shared');
+  add('แผ่นพลาสติก 7×7','🗂',allBoxFull,'plastic','แพ็ค',450,'1 แพ็ค = 450 แผ่น','shared');
+  if(N>0){
+    add('เส้นหมี่ (อบใหญ่)','🍜',obNeeded*2700,'noodledry','อบใหญ่',2700,`${noodleBatches} คลุก`,'noodle');
+    add('ตั้งฉ่าย','🫙',N/0.9,'tangchai','กระปุก',297,'กระปุก 330ก. yield 90%','noodle');
+  }
+  if(R_box>0)
+    add('ข้าวสาร','🌾',riceBatches*4000,'ricesaan','กระสอบ',25000,`${riceBatches} batch | 1 กระสอบ = 25 กก.`,'rice');
+  if(N>0||RC>0) add('ไก่ฉีก','🐔',N*50+RC*70,'chicken','แพ็ค',1500,`เส้น ${N*50}ก. + ข้าว ${RC*70}ก.`,'protein');
+  if(RW>0||RWP>0) add('เนื้อวากิว','🥩',RW*(1000/4.5)+RWP*(1000/4.5*0.5),'wagyu','แพ็ค',1000,`มาตรฐาน ${RW} + Petite ${RWP}`,'protein');
+  if(RK>0||RKP>0) add('หมูคุโรบูตะ','🐷',RK*(1000/4.5)+RKP*(1000/4.5*0.5),'kuro','แพ็ค',1000,`มาตรฐาน ${RK} + Petite ${RKP}`,'protein');
+  return rows;
+}
+ 
+// Convert boxes sold into ingredient grams consumed — uses per-box rates (no batch ceiling)
+// so that zero-sales days don't accidentally wipe out stock carry-forward
+function boxesToIngredientG(N, RC, RW, RK, RWP, RKP, sKey, garlicPackG) {
+  const R_box = RC+RW+RK+RWP+RKP;
+  const totalBoxes = N+R_box;
+  const R_eq = RC+RW+RK+RWP*0.5+RKP*0.5;
+ 
+  // Per-box rates (no ceil — proportional consumption)
+  const noodlePerBox  = 1/29;          // batches per noodle box
+  const obPerNoodleB  = 4000/BOILED_PER_OB; // ob per noodle batch
+  const ricePerBox    = 1/RICE_BATCH_BOXES; // batches per rice-eq box
+ 
+  const noodleBatchesF = N * noodlePerBox;
+  const obF            = noodleBatchesF * (4000/BOILED_PER_OB);
+  const riceBatchesF   = R_eq * ricePerBox;
+ 
+  const R_std = RC+RW+RK;
+  const R_pet = RWP+RKP;
+  const allBoxFull = N + R_box; // Petite นับเต็มกล่องสำหรับผัก/กระเทียม/น้ำปรุง/พาร์สลี่
+  const map = {
+    lettuce:   allBoxFull * 25,
+    garlic:    (N*1.5 + R_box*3) + (noodleBatchesF * 110),
+    oil:       noodleBatchesF*100 + riceBatchesF*400,
+    sauce:     noodleBatchesF*1100 + riceBatchesF*2000,
+    parsley:   allBoxFull * 0.025,
+    box26:     N + R_std,    // กล่อง 26oz เฉพาะเมนูปกติ
+    box16:     R_pet,        // กล่อง 16oz เฉพาะ Petite
+    plastic:   allBoxFull,
+    noodledry: obF * 2700,
+    tangchai:  N / 0.9,
+    ricesaan:  riceBatchesF * 4000,
+    chicken:   N*50 + RC*70,
+    wagyu:     RW*(1000/4.5) + RWP*(1000/4.5*0.5),
+    kuro:      RK*(1000/4.5) + RKP*(1000/4.5*0.5),
+  };
+  return map[sKey] || 0;
+}
+ 
+// roundResults[ri] = { reqUnits per sKey, totalReq per sKey }
+// so round ri+1 can reference it
+let roundResults = [];
+ 
+function renderRoundTable(ri, ingredients, isAuto, autoStockMap, prevReqMap) {
+  const sectionLabels = {shared:'วัตถุดิบร่วมกัน',noodle:'เส้นหมี่ไก่ฉีก',rice:'เมนูข้าว',protein:'โปรตีน'};
+  let html = '';
+ 
+  if (isAuto) {
+    html += `<div class="auto-stock-banner">
+      🔄 <span><strong>สต็อคเริ่มต้นคำนวณอัตโนมัติ</strong> = สต็อคต้นรอบก่อน + เบิกรอบก่อน − วัตถุดิบที่ใช้ระหว่างรอบ</span>
+    </div>`;
+  }
+ 
+  html += `<table><thead><tr>
+    <th style="width:22%">วัตถุดิบ</th>
+    <th style="width:14%">ต้องใช้</th>
+    <th style="width:22%">สต็อคที่สาขา</th>
+    <th style="width:12%">ยังขาด</th>
+    <th style="width:14%">ต้องเบิก</th>
+    <th style="width:16%">สถานะ</th>
+  </tr></thead><tbody>`;
+ 
+  const reqMap = {};
+  let lastSection = '';
+ 
+  ingredients.forEach(row => {
+    if (row.section !== lastSection) {
+      html += `<tr><td colspan="6" style="background:var(--surface2);padding:7px 14px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;">${sectionLabels[row.section]||''}</td></tr>`;
+      lastSection = row.section;
+    }
+ 
+    // Determine stock units
+    let stockUnits, stockAutoFormula = '';
+    if (!isAuto) {
+      // round 0: user input
+      const stkId = `stk-0-${row.sKey}`;
+      stockUnits = parseFloat(document.getElementById(stkId)?.value) || 0;
+    } else {
+      // auto: (สต็อคต้นรอบก่อน + ของที่เบิกรอบก่อน) − วัตถุดิบที่ใช้ระหว่างรอบ
+      const prevStockUnits = prevReqMap?.[`stock_${row.sKey}`] ?? 0;
+      const prevReqUnits   = prevReqMap?.[row.sKey] ?? 0;
+      const prevTotalAvail = prevStockUnits + prevReqUnits;
+      const consumedG      = autoStockMap?.[row.sKey] ?? 0;
+      const consumedUnits  = consumedG / row.sGpu;
+      stockUnits = Math.max(0, prevTotalAvail - consumedUnits);
+      const fmt = v => parseFloat(v.toFixed(2));
+      stockAutoFormula = `(มี ${fmt(prevStockUnits)} + เบิก ${fmt(prevReqUnits)}) − ใช้ ${fmt(consumedUnits)} = ${fmt(stockUnits)}`;
+    }
+ 
+    reqMap[row.sKey] = 0;
+    reqMap[`stock_${row.sKey}`] = stockUnits; // carry opening stock to next round
+ 
+    const stockG  = stockUnits * row.sGpu;
+    const shortG  = Math.max(0, row.needG - stockG);
+    const reqUnitsRaw = shortG / row.sGpu;
+    const reqUnits    = Math.ceil(reqUnitsRaw);
+    const ss          = reqUnits > 0 ? safetyUnits(reqUnits) : 0;
+    const totalReq    = reqUnits + ss;
+    reqMap[row.sKey]  = totalReq;
+ 
+    const isEmpty = row.needG === 0;
+    const isOk    = reqUnits === 0 && row.needG > 0;
+ 
+    const needDisp  = isEmpty ? '—' : `<span class="val">${udisp(row.needG,row.sGpu)}</span><span class="unit-sm">${row.sUnit}</span>`;
+    const shortDisp = isEmpty ? '—' : shortG > 0
+      ? `<span class="val warn-val">${udisp(shortG,row.sGpu)}</span><span class="unit-sm">${row.sUnit}</span>`
+      : `<span class="ok">✓ เพียงพอ</span>`;
+    const reqCell   = isEmpty ? '—' : isOk ? `<span style="color:var(--text3)">—</span>` : `
+      <div class="req-cell">
+        <div><span class="req-main">${totalReq}</span><span class="unit-sm">${row.sUnit}</span></div>
+        <div class="req-breakdown">${reqUnits} จำเป็น</div>
+        <div class="req-safety">+${ss} safety</div>
+      </div>`;
+    const badge = isEmpty ? '' : isOk
+      ? `<span class="badge badge-ok">ไม่ต้องเบิก</span>`
+      : `<span class="badge badge-warn">เบิก ${totalReq} ${row.sUnit}</span>`;
+ 
+    // Stock display
+    let stockCell;
+    if (!isAuto) {
+      const stkId = `stk-0-${row.sKey}`;
+      stockCell = `<div style="display:flex;align-items:center;">
+        <input class="stock-input" type="number" id="${stkId}" value="${stockUnits||0}" min="0" step="1" oninput="calc()" placeholder="0">
+        <span class="stock-unit">${row.sUnit}</span>
+      </div>`;
+    } else {
+      stockCell = `<div class="stock-cell-wrap">
+        <div style="display:flex;align-items:center;gap:5px;">
+          <div class="stock-auto-val">🔄 ${parseFloat(stockUnits.toFixed(2))}</div>
+          <span class="stock-unit">${row.sUnit}</span>
+        </div>
+        <div class="stock-auto-formula">${stockAutoFormula}</div>
+      </div>`;
+    }
+ 
+    html += `<tr>
+      <td><div class="item-name">${row.icon} ${row.name}</div><div class="item-sub">${row.note}</div></td>
+      <td>${needDisp}</td>
+      <td>${stockCell}</td>
+      <td>${shortDisp}</td>
+      <td>${reqCell}</td>
+      <td>${badge}</td>
+    </tr>`;
+  });
+ 
+  html += '</tbody></table>';
+  return { html, reqMap };
+}
+ 
+function calc() {
+  const garlicPackG = parseInt(document.getElementById('garlic-pack-size').value);
+  const rounds = getRounds();
+ 
+  if (rounds.length === 0) {
+    document.getElementById('rounds-container').innerHTML =
+      `<div style="text-align:center;padding:60px;color:var(--text3);">กรุณาเลือกรูปแบบการส่งของ</div>`;
+    return;
+  }
+ 
+  roundResults = [];
+  let html = '';
+ 
+  rounds.forEach(({delDay, days, ri}) => {
+    const totals = {};
+    MENUS.forEach(m => totals[m.id] = 0);
+    days.forEach(({dayIdx, weight, weekDelta}) => {
+      MENUS.forEach(m => { totals[m.id] += getPlan(dayIdx, m.id, weekDelta || 0) * weight; });
+    });
+ 
+    const N   = Math.ceil(totals['noodle']);
+    const RC  = Math.ceil(totals['rc']);
+    const RW  = Math.ceil(totals['rw']);
+    const RK  = Math.ceil(totals['rk']);
+    const RWP = Math.ceil(totals['rwp']);
+    const RKP = Math.ceil(totals['rkp']);
+    const R_eq  = RC+RW+RK+RWP*0.5+RKP*0.5;
+    const R_box = RC+RW+RK+RWP+RKP;
+    const T_box = N + R_box;
+    const noodleBatches = Math.ceil(N/29);
+    const obNeeded = noodleBatches > 0 ? (noodleBatches*4000)/BOILED_PER_OB : 0;
+    const riceBatches = Math.ceil(R_eq/RICE_BATCH_BOXES);
+ 
+    const ingredients = buildIngredients(T_box,N,RC,RW,RK,RWP,RKP,noodleBatches,obNeeded,riceBatches,garlicPackG);
+    const isAuto = ri > 0;
+ 
+    // สต็อคต้นรอบนี้ = สต็อคต้นรอบก่อน + เบิกรอบก่อน − ใช้ทุกวันที่รอบก่อนครอบคลุม (weighted)
+    let autoStockMap = null, prevReqMap = null;
+    if (isAuto) {
+      prevReqMap = roundResults[ri - 1] || {};
+      const prevRound = rounds[ri - 1];
+      const usedTotals = {};
+      MENUS.forEach(m => usedTotals[m.id] = 0);
+      prevRound.days.forEach(({dayIdx, weight, weekDelta}) => {
+        MENUS.forEach(m => { usedTotals[m.id] += getPlan(dayIdx, m.id, weekDelta || 0) * weight; });
+      });
+      const uN=usedTotals['noodle'], uRC=usedTotals['rc'], uRW=usedTotals['rw'];
+      const uRK=usedTotals['rk'], uRWP=usedTotals['rwp'], uRKP=usedTotals['rkp'];
+      autoStockMap = {};
+      ingredients.forEach(row => {
+        autoStockMap[row.sKey] = boxesToIngredientG(uN,uRC,uRW,uRK,uRWP,uRKP,row.sKey,garlicPackG);
+      });
+    }
+ 
+    const covDaysHtml = days.map(d=>`<span style="font-size:11px;opacity:0.9">${DAY_NAMES[d.dayIdx]}${d.weekDelta?` (+${d.weekDelta} สัปดาห์)`:''}${d.weight<1?' (½)':''}</span>`).join(' › ');
+ 
+    html += `<div class="round-block">
+      <div class="round-header">
+        <div>
+          <div class="round-title">📦 รอบส่งของ — ${DAY_NAMES[delDay]}</div>
+          <div class="round-coverage">ครอบคลุม: ${covDaysHtml}</div>
+        </div>
+        <div class="round-summary-chips">
+          <span class="round-chip">📦 ${T_box} กล่อง</span>
+          ${N>0?`<span class="round-chip">🍜 ${noodleBatches} คลุก</span>`:''}
+          ${R_box>0?`<span class="round-chip">🍚 ${riceBatches} batch</span>`:''}
+        </div>
+      </div>
+      __TABLE_${ri}__
+    </div>`;
+ 
+    // placeholder — render table separately so we can collect reqMap
+    roundResults.push(null); // will fill after
+    const { html: tableHtml, reqMap } = renderRoundTable(ri, ingredients, isAuto, autoStockMap, prevReqMap);
+    roundResults[ri] = reqMap;
+    html = html.replace(`__TABLE_${ri}__`, tableHtml);
+  });
+ 
+  if (!html || html.trim() === '') {
+    document.getElementById('rounds-container').innerHTML =
+      '<div style="padding:40px;color:red;font-weight:700;">ไม่สามารถสร้างตารางเบิกได้</div>';
+  } else {
+    document.getElementById('rounds-container').innerHTML = html;
+  }
+}
+ 
+function resetAll() {
+  MENUS.forEach(m => { for(let i=0;i<7;i++) setPlan(i,m.id,0); });
+  document.querySelectorAll('.stock-input').forEach(el => el.value = 0);
+  renderGrid(); calc();
+}
+ 
+
+function initQuickFillMenu() {
+  const sel = document.getElementById('quickfill-menu');
+  if (!sel) return;
+  const current = sel.value || 'all';
+  sel.innerHTML = '<option value="all">ทุกเมนู</option>' +
+    MENUS.map(m => `<option value="${m.id}">${m.label}</option>`).join('');
+  sel.value = current;
+}
+
+function quickFillPreset(type) {
+  const boxes = Array.from(document.querySelectorAll('.qf-day'));
+  const set = (days) => boxes.forEach(cb => cb.checked = days.includes(parseInt(cb.value)));
+  if (type === 'weekday') set([0,1,2,3,4]);
+  if (type === 'weekend') set([5,6]);
+  if (type === 'all') set([0,1,2,3,4,5,6]);
+  if (type === 'clear') set([]);
+}
+
+function getQuickFillSelectedDays() {
+  return Array.from(document.querySelectorAll('.qf-day:checked')).map(cb => parseInt(cb.value));
+}
+
+function applyQuickFill() {
+  const val = parseInt(document.getElementById('quickfill-value')?.value) || 0;
+  const menuId = document.getElementById('quickfill-menu')?.value || 'all';
+  const days = getQuickFillSelectedDays();
+  if (days.length === 0) {
+    alert('กรุณาเลือกวันที่ต้องการใส่ยอดขาย');
+    return;
+  }
+
+  const targetMenus = menuId === 'all' ? MENUS.map(m => m.id) : [menuId];
+  days.forEach(dayIdx => {
+    targetMenus.forEach(id => setPlan(dayIdx, id, val));
+  });
+
+  renderGrid();
+  calc();
+}
+
+function copyMondayToFriday() {
+  MENUS.forEach(m => {
+    const mondayVal = getPlan(0, m.id);
+    [1,2,3,4].forEach(dayIdx => setPlan(dayIdx, m.id, mondayVal));
+  });
+  renderGrid();
+  calc();
+}
+
+// Init
+document.getElementById('delivery-schedule').value = 'daily';
+deliveryDays = [0,1,2,3,4,5,6];
+updateWeekLabel();
+initQuickFillMenu();
+quickFillPreset('weekday');
+renderDayChips();
+renderGrid();
+calc();
+</script>
+</body>
+</html>
